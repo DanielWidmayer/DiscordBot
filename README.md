@@ -28,5 +28,5 @@ Any Discord Bot needs to be created in the [Discord Developer Portal](https://di
 To dig deeper visit [Discord.js](https://discord.js.org/).
 
 ### Preview
-[![!help in Discord channel](https://imgur.com/kSHd5gE)]
+[![!help in Discord channel](https://i.imgur.com/kSHd5gE.png)]
 
