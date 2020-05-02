@@ -1,12 +1,16 @@
-//include discord.js for discord bot functions
+// require discord.js for discord bot functions
 const Discord = require('discord.js');
+// require postgres database
 const DaBa = require('pg');
+// create Database Client
 const sql = new DaBa.Client({
+  // define connection with stored Config Var DATABASE_URL in Heroku
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
   },
 });
+// create Bot Client
 const bot = new Discord.Client();
 //include moment for ping functions (network latency)
 const moment = require('moment');
@@ -26,7 +30,12 @@ bot.on('ready', () => {
   console.log('Bot is online');
 
   sql.connect();
-
+  // create Table if it's not existing
+  /* matrnr is the Matrikelnumber of the student and is used as primary key */
+  /* discordalias is the discord nametag */
+  /* memes is the memecounter for each person */
+  /* thumbs is the likecounter of each person */
+  /* ehre is the !ehre counter fpr each person */
   sql.query('CREATE TABLE IF NOT EXISTS user_table (matrnr int PRIMARY KEY NOT NULL, discordalias text, memes int, thumbs int, ehre int)', (err, res) => {
     if (err) console.log(err);
     else {
@@ -37,6 +46,7 @@ bot.on('ready', () => {
   });
 });
 
+// react to incoming messages
 bot.on('message', (msg) => {
   if (msg.guild === null) {
     msg.author.send('get outta here!:angry:').catch((err) => {
@@ -95,7 +105,7 @@ bot.on('message', (msg) => {
   // Danke|Bitte
   else if (msg.content.startsWith('Danke')) {
     if (msg.content.split(' ').length < 2) {
-      msg.react('❤️');
+      msg.react('👍');
       msg.channel.send('Bitte 😌', { tts: true });
     }
   }
@@ -116,6 +126,7 @@ bot.on('message', (msg) => {
   //help
   //
   else if (msg.content.startsWith(PREFIX + 'help')) {
+    // message embed styling
     const embHelp = new Discord.MessageEmbed()
       .setColor('#0099ff')
       .setTitle('!help - Presence Bot Documentation')
@@ -124,6 +135,7 @@ bot.on('message', (msg) => {
       .addFields({ name: '```!ping```', value: 'check your server latency :signal_strength:' }, { name: '```!version```', value: 'shows the current Version of the bot :robot:' })
       .setTimestamp(msg.createdAt)
       .setFooter('Jens Bühler & Daniel Widmayer', 'https://i.imgur.com/mDj7Q6n.png');
+    // customize help for teachers
     if (msg.member._roles.includes(teacherID)) {
       embHelp.addFields({
         name: '```!track```',
@@ -158,9 +170,11 @@ bot.on('message', (msg) => {
   // Track
   //
   else if (msg.content.startsWith(PREFIX + 'track')) {
+    // check if user has admin or teacher permission
     if (msg.member.hasPermission('ADMINISTRATOR') || msg.member._roles.includes(teacherID)) {
+      // define embedded message
       const embTrack = new Discord.MessageEmbed().setColor('#0099ff').setTitle('```!track```').setTimestamp(msg.createdAt).setFooter('donations appreciated', 'https://i.imgur.com/mDj7Q6n.png');
-      var myMembers = msg.channel.guild.members.cache; //msg.channel.members;
+      var myMembers = msg.channel.guild.members.cache; // not msg.channel.members, since it would only track ppl that have permission for the text-channel
       var onlineMembers = [];
       if (msg.content.split(' ').pop() != PREFIX + 'track') {
         msg.guild.channels.cache.forEach(function (element) {
@@ -247,13 +261,16 @@ bot.on('message', (msg) => {
     msg.delete();
   }
   //
-  // change
+  // change syntax: !change <'nametag'> <matrikelnum>
   // !change 'Max Mustermann#1234' 1234567
   else if (msg.content.startsWith(PREFIX + 'change')) {
+    // check admin permission
     if (msg.member.hasPermission('ADMINISTRATOR')) {
+      // exclude !change to get discordID' matrikelnum
       var command = msg.content.split(" '", 2).pop();
+      // save discordid and matrikelnum into string array
       var data = command.split("' ");
-      //console.log("change request: " + data[0] + " " + data[1]);
+      // data[0] is discordID data[1] is matrikelnum
       sql.query("SELECT * FROM user_table WHERE discordalias = '" + data[0] + "'", (err, res) => {
         if (err) {
           console.log(err);
@@ -261,6 +278,7 @@ bot.on('message', (msg) => {
         } else if (res.rows.length == 0) {
           msg.channel.send('Oops, it seems like something went wrong!');
         } else {
+          // update linked matrikelnum
           sql.query('UPDATE user_table SET matrnr = ' + data[1] + " WHERE discordalias = '" + data[0] + "'", (err, res) => {
             if (err) console.log(err);
             else {
@@ -270,23 +288,28 @@ bot.on('message', (msg) => {
         }
       });
     } else {
+      // if user doesn't have admin rights
       msg.channel.send('You are not worthy enough for the usage of such power! :man_mage:');
     }
+    // delete message to ensure anonymity
     msg.delete();
   }
   //
-  // delete
-  //
+  // delete syntax: !delete <nametag>
+  // !delete Max Mustermann#1234
   else if (msg.content.startsWith(PREFIX + 'delete')) {
+    // check admin permission
     if (msg.member.hasPermission('ADMINISTRATOR')) {
+      // exclude !delete to get nametag
       var command = msg.content.split(' ', 2).pop();
-      //console.log("delete request on " + command);
+      // search for Discord nametag
       sql.query("SELECT * FROM user_table WHERE discordalias = '" + command.toString() + "'", (err, res) => {
         if (err) {
           console.log(err);
           msg.channel.send('Oops, it seems like something went wrong!');
         } else if (res.rows.length == 0) msg.channel.send('Oops, it seems like something went wrong!');
         else {
+          // delete statement
           sql.query("DELETE FROM user_table WHERE discordalias = '" + command.toString() + "'", (err, res) => {
             if (err) {
               console.log(err);
@@ -296,6 +319,7 @@ bot.on('message', (msg) => {
         }
       });
     } else {
+      // if user doesn't have admin rights
       msg.channel.send('You are not worthy enough for the usage of such power! :man_mage:');
     }
     msg.delete();
@@ -311,4 +335,5 @@ bot.on('disconnect', () => {
   console.log('Bot disconnected');
 });
 
+// login the Bot by its BOT_TOKEN which is stored in Heroku Config Vars
 bot.login(process.env.BOT_TOKEN);
