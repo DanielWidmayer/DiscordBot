@@ -26,16 +26,18 @@ const dbKEYda = 'discordalias';
 const PREFIX = '!';
 var version = '2.1.2';
 
+// react to bot is ready
 bot.on('ready', () => {
+  // log useful for Heroku console - knowing when the deploy has finished
   console.log('Bot is online');
 
-  sql.connect();
   // create Table if it's not existing
   /* matrnr is the Matrikelnumber of the student and is used as primary key */
   /* discordalias is the discord nametag */
   /* memes is the memecounter for each person */
   /* thumbs is the likecounter of each person */
   /* ehre is the !ehre counter fpr each person */
+  sql.connect();
   sql.query('CREATE TABLE IF NOT EXISTS user_table (matrnr int PRIMARY KEY NOT NULL, discordalias text, memes int, thumbs int, ehre int)', (err, res) => {
     if (err) console.log(err);
     else {
@@ -48,8 +50,10 @@ bot.on('ready', () => {
 
 // react to incoming messages
 bot.on('message', (msg) => {
+  //catch DM's
   if (msg.guild === null) {
-    msg.author.send('get outta here!:angry:').catch((err) => {
+    // define answers to DM's
+    msg.author.send('Please use me on the INF18IN Server, since my power is limited here.').catch((err) => {
       console.log(err);
     });
   }
@@ -68,16 +72,10 @@ bot.on('message', (msg) => {
   //
   else if (msg.content.startsWith(PREFIX + 'dquery')) {
     if (msg.member.hasPermission('ADMINISTRATOR')) {
-      sql.query('SELECT * FROM pg_catalog.pg_tables', (err, res) => {
+      sql.query('SELECT * FROM user_table', (err, res) => {
         if (err) console.log(err);
         else {
           console.log(res.rows);
-          /*res.rows.forEach(rerow => {
-            sql.query("INSERT INTO user_table(matrnr, discordalias, memes, thumbs, ehre) VALUES(" + rerow.matrnr + ",'" + rerow.discordalias + "',0,0,0)", (err2, res2) => {
-              if(err2) console.log(err2);
-              else console.log("added " + rerow.discordalias);
-            });
-          });*/
         }
       });
     }
